@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "App user profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "avgConsumptionCost": { "type": "number", "description": "Average cost per drinking session" },
+        "preferredDrink": { "type": "string" },
+        "lastDrinkAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "DrinkingLog": {
+      "title": "DrinkingLog",
+      "description": "Record of a drinking session",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "userUid": { "type": "string" },
+        "drinkName": { "type": "string" },
+        "drinkType": { "type": "string", "enum": ["Soju", "Beer", "Wine", "Whiskey", "Makgeolli", "Other"] },
+        "abv": { "type": "number" },
+        "rating": { "type": "number" },
+        "anju": { "type": "string" },
+        "anjuCategory": { "type": "string" },
+        "cost": { "type": "number" },
+        "calories": { "type": "number" },
+        "review": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "consumedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userUid", "drinkName", "consumedAt"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Social feed post linked to a log",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "authorUid": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorPhoto": { "type": "string" },
+        "logId": { "type": "string" },
+        "content": { "type": "string" },
+        "likes": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorUid", "logId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Individual user profile"
+    },
+    "/logs/{logId}": {
+      "schema": "DrinkingLog",
+      "description": "Individual drinking logs"
+    },
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Social feed posts"
+    }
+  }
+}

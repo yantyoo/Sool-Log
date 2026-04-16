@@ -1,0 +1,6 @@
+{
+  "name": "술로그 (Sool-Log)",
+  "description": "개인의 주류 소비 아카이빙, 유저 간 페어링(안주) 정보 공유, 금주 타이머를 통한 건강한 음주 습관 형성 플랫폼",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["AI Object Recognition", "Social Networking", "Healthcare Analytics"]
+}

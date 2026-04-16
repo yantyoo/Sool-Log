@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // 
+    // Collection: users
+    // Document ID: {userId}
+    // Fields: uid, displayName, email, photoURL, avgConsumptionCost, preferredDrink, lastDrinkAt, createdAt
+    //
+    // Collection: logs
+    // Document ID: {logId}
+    // Fields: userUid, drinkName, drinkType, abv, rating, anju, anjuCategory, cost, calories, review, isPublic, consumedAt
+    //
+    // Collection: posts
+    // Document ID: {postId}
+    // Fields: authorUid, authorName, authorPhoto, logId, content, likes, createdAt
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "yant3722@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             data.email is string &&
+             (data.displayName == null || data.displayName is string);
+    }
+
+    function isValidLog(data) {
+      return data.userUid == request.auth.uid &&
+             data.drinkName is string &&
+             data.drinkName.size() > 0 && data.drinkName.size() < 100 &&
+             data.consumedAt is string;
+    }
+
+    function isValidPost(data) {
+      return data.authorUid == request.auth.uid &&
+             data.content is string && data.content.size() < 1000;
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isOwner(userId) && isValidUser(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /logs/{logId} {
+      allow read: if isAuthenticated() && (resource.data.isPublic == true || resource.data.userUid == request.auth.uid);
+      allow create: if isAuthenticated() && isValidLog(request.resource.data);
+      allow update: if isAuthenticated() && resource.data.userUid == request.auth.uid && isValidLog(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.userUid == request.auth.uid;
+    }
+
+    match /posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidPost(request.resource.data);
+      allow update: if isAuthenticated() && (
+        (resource.data.authorUid == request.auth.uid && isValidPost(request.resource.data)) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']))
+      );
+      allow delete: if isAuthenticated() && (resource.data.authorUid == request.auth.uid || isAdmin());
+    }
+  }
+}
