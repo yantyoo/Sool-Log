@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "455090817374",
+    "project_id": "gen-lang-client-0915044345",
+    "storage_bucket": "gen-lang-client-0915044345.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:455090817374:android:184e01dff82da6627ee7cf",
+        "android_client_info": {
+          "package_name": "com.yantyoo.soollog"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "455090817374-9famhhf7bof2f9pdssjga6llk8tlf4gt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpAQDr-FmRs3IkGyw2exWzj48sXgJ6-h4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "455090817374-9famhhf7bof2f9pdssjga6llk8tlf4gt.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "455090817374-75iraa89tchq9i8nc0n8fua9uagqht3b.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.yantyoo.soollog"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
