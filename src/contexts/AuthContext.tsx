@@ -94,9 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (Capacitor.isNativePlatform()) {
         console.info('[auth] native Google sign-in started', { platform: Capacitor.getPlatform() });
-        const result = await FirebaseAuthentication.signInWithGoogle({
-          skipNativeAuth: true,
-        });
+        const result = await FirebaseAuthentication.signInWithGoogle();
         const idToken = result.credential?.idToken;
         if (!idToken) {
           throw new Error('Google 로그인 결과에서 ID 토큰을 받지 못했습니다.');
