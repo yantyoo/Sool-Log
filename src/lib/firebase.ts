@@ -1,11 +1,22 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { Capacitor } from '@capacitor/core';
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { getAuth, indexedDBLocalPersistence, initializeAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+export const auth = Capacitor.isNativePlatform()
+  ? initializeAuth(app, {
+      persistence: indexedDBLocalPersistence,
+    })
+  : getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+console.info('[firebase] initialized', {
+  projectId: firebaseConfig.projectId,
+  authDomain: firebaseConfig.authDomain,
+  firestoreDatabaseId: firebaseConfig.firestoreDatabaseId,
+});
 
 export enum OperationType {
   CREATE = 'create',

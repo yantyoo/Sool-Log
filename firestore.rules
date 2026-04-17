@@ -46,6 +46,26 @@ service cloud.firestore {
              data.consumedAt is string;
     }
 
+    function isValidUserLog(data) {
+      return data.userId == request.auth.uid &&
+             data.drinkCategory is string &&
+             data.consumedAt is string &&
+             data.drinkName is string &&
+             data.drinkName.size() > 0 && data.drinkName.size() < 100;
+    }
+
+    function isValidUserGoal(data) {
+      return data.userId == request.auth.uid &&
+             data.title is string &&
+             data.title.size() > 0 && data.title.size() < 100 &&
+             data.goalType is string &&
+             data.period is string &&
+             data.targetValue is number &&
+             data.unit is string &&
+             data.warningThresholdPercent is number &&
+             data.enabled is bool;
+    }
+
     function isValidPost(data) {
       return data.authorUid == request.auth.uid &&
              data.content is string && data.content.size() < 1000;
@@ -63,6 +83,18 @@ service cloud.firestore {
       allow create: if isAuthenticated() && isValidLog(request.resource.data);
       allow update: if isAuthenticated() && resource.data.userUid == request.auth.uid && isValidLog(request.resource.data);
       allow delete: if isAuthenticated() && resource.data.userUid == request.auth.uid;
+    }
+
+    match /users/{userId}/logs/{logId} {
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserLog(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserLog(request.resource.data);
+    }
+
+    match /users/{userId}/goals/{goalId} {
+      allow read, delete: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUserGoal(request.resource.data);
+      allow update: if isOwner(userId) && isValidUserGoal(request.resource.data);
     }
 
     match /posts/{postId} {

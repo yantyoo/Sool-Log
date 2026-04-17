@@ -2,7 +2,15 @@ node_modules/
 build/
 dist/
 coverage/
+.node20/
+android/**/build/
+ios/App/Pods/
+ios/App/build/
+tmp/
 .DS_Store
 *.log
 .env*
 !.env.example
+firebase-service-account*.json
+service-account*.json
+*adminsdk*.json

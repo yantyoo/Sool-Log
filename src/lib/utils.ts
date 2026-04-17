@@ -21,3 +21,34 @@ export function formatTime(seconds: number) {
   if (days > 0) return `${days}일 ${hrs}시간 ${mins}분`;
   return `${hrs}시간 ${mins}분 ${secs}초`;
 }
+
+export function toDateTimeLocalValue(date: string | Date = new Date()) {
+  const normalized = typeof date === 'string' ? new Date(date) : date;
+  const local = new Date(normalized.getTime() - normalized.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+export function formatDateTimeLabel(value: string | Date) {
+  const date = typeof value === 'string' ? new Date(value) : value;
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
+export function formatDateLabel(value: string | Date) {
+  const date = typeof value === 'string' ? new Date(value) : value;
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'short',
+    day: 'numeric',
+    weekday: 'short',
+  }).format(date);
+}
+
+export function formatPercent(value: number) {
+  return `${Math.round(value)}%`;
+}
