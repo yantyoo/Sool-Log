@@ -15,6 +15,7 @@ import { auth, db } from '../lib/firebase';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  loggingIn: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
   dbUser: any | null;
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [dbUser, setDbUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loggingIn, setLoggingIn] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,10 +89,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async () => {
     setAuthError(null);
+    setLoggingIn(true);
 
     try {
       if (Capacitor.isNativePlatform()) {
-        const result = await FirebaseAuthentication.signInWithGoogle();
+        console.info('[auth] native Google sign-in started', { platform: Capacitor.getPlatform() });
+        const result = await FirebaseAuthentication.signInWithGoogle({
+          skipNativeAuth: true,
+        });
         const idToken = result.credential?.idToken;
         if (!idToken) {
           throw new Error('Google 로그인 결과에서 ID 토큰을 받지 못했습니다.');
@@ -98,6 +104,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
         await signInWithCredential(auth, credential);
+        console.info('[auth] native Google sign-in completed', {
+          uid: result.user?.uid,
+          hasAccessToken: Boolean(result.credential?.accessToken),
+        });
         return;
       }
 
@@ -106,6 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const message = error instanceof Error ? error.message : 'Google 로그인에 실패했습니다.';
       setAuthError(message);
       throw error;
+    } finally {
+      setLoggingIn(false);
     }
   };
 
@@ -117,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, dbUser, authError }}>
+    <AuthContext.Provider value={{ user, loading, loggingIn, login, logout, dbUser, authError }}>
       {children}
     </AuthContext.Provider>
   );

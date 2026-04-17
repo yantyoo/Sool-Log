@@ -3,7 +3,7 @@ import { GlassWater } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function LoginScreen() {
-  const { login, authError } = useAuth();
+  const { login, authError, loggingIn } = useAuth();
 
   return (
     <div className="min-h-screen px-6 py-12 flex flex-col justify-between text-center">
@@ -21,8 +21,8 @@ export default function LoginScreen() {
       </div>
 
       <div className="space-y-4">
-        <button onClick={login} className="btn-primary w-full py-4">
-          Google 로그인
+        <button onClick={login} className="btn-primary w-full py-4 disabled:opacity-60" disabled={loggingIn}>
+          {loggingIn ? '로그인 중...' : 'Google 로그인'}
         </button>
         {authError ? (
           <p className="text-xs leading-relaxed text-red-300/90 bg-red-500/10 border border-red-500/20 rounded-2xl px-4 py-3">
