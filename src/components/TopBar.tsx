@@ -1,26 +1,36 @@
 import React from 'react';
-import { Bell, UserCircle } from 'lucide-react';
+import { Bell, UserCircle, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function TopBar() {
+export default function TopBar({ onOpenNotifications }: { onOpenNotifications?: () => void }) {
   const { user } = useAuth();
 
   return (
-    <header className="sticky top-0 h-[70px] bg-black/20 backdrop-blur-md px-10 flex items-center justify-between z-40 border-b border-white/10">
-      <div className="flex items-center space-x-2">
-        <h1 className="text-2xl font-black tracking-tighter text-primary uppercase">술로그</h1>
+    <header className="absolute top-0 left-0 right-0 z-40 px-6 pt-8 pb-4 pointer-events-none flex justify-between items-start">
+      <div className="flex items-center gap-2.5 pointer-events-auto">
+        <div className="w-9 h-9 rounded-[12px] bg-primary/10 flex items-center justify-center border border-primary/20 backdrop-blur-md">
+           <Sparkles size={16} className="text-primary-light" />
+        </div>
+        <span className="text-[12px] font-black tracking-[0.25em] text-white/50 uppercase">Sool.Log</span>
       </div>
-      <div className="flex items-center space-x-5">
-        <button className="relative w-9 h-9 bg-white/5 border border-white/10 rounded-full flex items-center justify-center text-white/80 hover:bg-white/10 transition-colors">
+
+      <div className="flex items-center gap-3 pointer-events-auto">
+        <button 
+          onClick={onOpenNotifications}
+          className="relative w-10 h-10 rounded-[14px] flex items-center justify-center text-white/50 hover:text-white bg-white/[0.03] border border-white/[0.05] backdrop-blur-xl transition-all active:scale-90"
+        >
           <Bell size={18} />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border-2 border-[#0a0b10]"></span>
+          <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-primary-light rounded-full shadow-[0_0_8px_rgba(192,193,255,1)]"></span>
         </button>
-        <button className="w-9 h-9 rounded-full border border-white/10 overflow-hidden bg-white/5 flex items-center justify-center">
-          {user?.photoURL ? (
-            <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-          ) : (
-            <UserCircle size={20} className="text-white/40" />
-          )}
+        
+        <button className="w-10 h-10 rounded-[14px] overflow-hidden border border-white/[0.05] bg-white/[0.03] backdrop-blur-xl p-0.5 transition-all active:scale-90">
+          <div className="w-full h-full rounded-[10px] overflow-hidden bg-white/5 flex items-center justify-center">
+            {user?.photoURL ? (
+              <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            ) : (
+              <UserCircle size={22} className="text-white/20" />
+            )}
+          </div>
         </button>
       </div>
     </header>

@@ -10,7 +10,8 @@ import {
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
-import { auth, db } from '../lib/firebase';
+import { db, getFirebaseAuth } from '../lib/firebase';
+import { emitToast } from '../lib/toast';
 
 interface AuthContextType {
   user: User | null;
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let unsubscribe = () => {};
     let cancelled = false;
+    const auth = getFirebaseAuth();
     const bootTimeout = window.setTimeout(() => {
       if (!cancelled) {
         setLoading(false);
@@ -90,29 +92,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async () => {
     setAuthError(null);
     setLoggingIn(true);
+    const auth = getFirebaseAuth();
+    const platform = Capacitor.getPlatform();
+    const useNativeAuth = platform === 'ios' || platform === 'android';
 
     try {
-      if (Capacitor.isNativePlatform()) {
-        console.info('[auth] native Google sign-in started', { platform: Capacitor.getPlatform() });
+      console.info('[auth] login requested', { platform, useNativeAuth });
+
+      if (useNativeAuth) {
+        console.info('[auth] native Google sign-in started', { platform });
         const result = await FirebaseAuthentication.signInWithGoogle();
+        
+        // Native SDK에서 반환된 idToken 사용
         const idToken = result.credential?.idToken;
         if (!idToken) {
-          throw new Error('Google 로그인 결과에서 ID 토큰을 받지 못했습니다.');
+          throw new Error('Google 로그인 결과에서 ID 토큰을 받지 못했습니다. Firebase 설정(SHA-1 등)을 확인해주세요.');
         }
 
-        const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
-        await signInWithCredential(auth, credential);
+        const credential = GoogleAuthProvider.credential(idToken);
+        const userCredential = await signInWithCredential(auth, credential);
+        
         console.info('[auth] native Google sign-in completed', {
-          uid: result.user?.uid,
-          hasAccessToken: Boolean(result.credential?.accessToken),
+          uid: userCredential.user.uid,
+          email: userCredential.user.email
         });
         return;
       }
 
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Google 로그인에 실패했습니다.';
+      // Web/Desktop 환경
+      console.info('[auth] web Google sign-in started', { platform });
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
+      const result = await signInWithPopup(auth, provider);
+      console.info('[auth] web Google sign-in completed', {
+        uid: result.user.uid,
+        email: result.user.email
+      });
+    } catch (error: any) {
+      console.error('[auth] login error', error);
+      let message = 'Google 로그인에 실패했습니다.';
+      
+      if (error.code === 'auth/popup-blocked') {
+        message = '브라우저 팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.';
+      } else if (error.code === 'auth/network-request-failed') {
+        message = '네트워크 연결을 확인한 뒤 다시 시도해주세요.';
+      } else if (error.message) {
+        message = error.message;
+      }
+      
       setAuthError(message);
+      emitToast({
+        tone: 'error',
+        title: '로그인 실패',
+        description: message,
+      });
       throw error;
     } finally {
       setLoggingIn(false);
@@ -120,7 +154,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    if (Capacitor.isNativePlatform()) {
+    const auth = getFirebaseAuth();
+    const platform = Capacitor.getPlatform();
+    if (platform === 'ios' || platform === 'android') {
       await FirebaseAuthentication.signOut();
     }
     await signOut(auth);

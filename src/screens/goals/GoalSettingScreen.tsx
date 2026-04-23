@@ -4,6 +4,7 @@ import GoalCard from '../../components/GoalCard';
 import EmptyState from '../../components/EmptyState';
 import { useAppData } from '../../state/AppDataContext';
 import type { GoalFormValues } from '../../types/goal';
+import { ChevronRight } from 'lucide-react';
 
 interface GoalSettingScreenProps {
   onOpenProgress: () => void;
@@ -34,10 +35,14 @@ export default function GoalSettingScreen({ onOpenProgress }: GoalSettingScreenP
     .filter((log) => new Date(log.consumedAt).getMonth() === new Date().getMonth())
     .reduce((sum, log) => sum + (log.calories ?? 0), 0);
 
-  const submit = () => {
+  const submit = async () => {
     if (!form.title.trim()) return;
-    saveGoal(form);
-    setForm(emptyGoalForm);
+    try {
+      await saveGoal(form);
+      setForm(emptyGoalForm);
+    } catch (error) {
+      console.error('Failed to save goal', error);
+    }
   };
 
   return (
@@ -53,44 +58,53 @@ export default function GoalSettingScreen({ onOpenProgress }: GoalSettingScreenP
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/40">Goal Setting</p>
         <label className="space-y-2 block">
           <span className="text-xs text-white/45">목표 이름</span>
-          <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none" placeholder="예: 주 3회 이하" />
+          <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className="input-field" placeholder="예: 주 3회 이하" />
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="space-y-2 block">
             <span className="text-xs text-white/45">목표 유형</span>
-            <select value={form.goalType} onChange={(event) => setForm({ ...form, goalType: event.target.value as GoalFormValues['goalType'] })} className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none">
-              <option value="frequency">Frequency</option>
-              <option value="spending">Spending</option>
-              <option value="calorie">Calorie</option>
-              <option value="sober_days">Sober Days</option>
-            </select>
+            <div className="relative">
+              <select value={form.goalType} onChange={(event) => setForm({ ...form, goalType: event.target.value as GoalFormValues['goalType'] })} className="select-field">
+                <option value="frequency">Frequency</option>
+                <option value="spending">Spending</option>
+                <option value="calorie">Calorie</option>
+                <option value="sober_days">Sober Days</option>
+              </select>
+              <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/20 pointer-events-none" size={16} />
+            </div>
           </label>
           <label className="space-y-2 block">
             <span className="text-xs text-white/45">주기</span>
-            <select value={form.period} onChange={(event) => setForm({ ...form, period: event.target.value as GoalFormValues['period'] })} className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none">
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-            </select>
+            <div className="relative">
+              <select value={form.period} onChange={(event) => setForm({ ...form, period: event.target.value as GoalFormValues['period'] })} className="select-field">
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+              <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/20 pointer-events-none" size={16} />
+            </div>
           </label>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <label className="space-y-2 block">
             <span className="text-xs text-white/45">목표 값</span>
-            <input value={form.targetValue} onChange={(event) => setForm({ ...form, targetValue: event.target.value })} className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none" />
+            <input value={form.targetValue} onChange={(event) => setForm({ ...form, targetValue: event.target.value })} className="input-field" />
           </label>
           <label className="space-y-2 block">
             <span className="text-xs text-white/45">단위</span>
-            <select value={form.unit} onChange={(event) => setForm({ ...form, unit: event.target.value as GoalFormValues['unit'] })} className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none">
-              <option value="회">회</option>
-              <option value="원">원</option>
-              <option value="kcal">kcal</option>
-              <option value="일">일</option>
-            </select>
+            <div className="relative">
+              <select value={form.unit} onChange={(event) => setForm({ ...form, unit: event.target.value as GoalFormValues['unit'] })} className="select-field">
+                <option value="회">회</option>
+                <option value="원">원</option>
+                <option value="kcal">kcal</option>
+                <option value="일">일</option>
+              </select>
+              <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-white/20 pointer-events-none" size={16} />
+            </div>
           </label>
         </div>
         <label className="space-y-2 block">
           <span className="text-xs text-white/45">경고 임계치(%)</span>
-          <input value={form.warningThresholdPercent} onChange={(event) => setForm({ ...form, warningThresholdPercent: event.target.value })} className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm outline-none" />
+          <input value={form.warningThresholdPercent} onChange={(event) => setForm({ ...form, warningThresholdPercent: event.target.value })} className="input-field" />
         </label>
         <button onClick={submit} className="btn-primary w-full py-4">저장</button>
       </div>
@@ -110,4 +124,3 @@ export default function GoalSettingScreen({ onOpenProgress }: GoalSettingScreenP
     </div>
   );
 }
-

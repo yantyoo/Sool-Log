@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { X, Camera, Search, ChevronRight, Star, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { analyzeAlcoholLabel } from '../lib/gemini';
+import { emitToast } from '../lib/toast';
 import { cn } from '../lib/utils';
 
 interface RecordModalProps {
@@ -55,19 +56,78 @@ export default function RecordModal({ isOpen, onClose }: RecordModalProps) {
     if (!user) return;
     setLoading(true);
     try {
-      await addDoc(collection(db, 'logs'), {
-        ...formData,
-        userUid: user.uid,
+      if (!formData.drinkName.trim()) {
+        emitToast({
+          tone: 'warning',
+          title: '제품명을 입력해주세요.',
+          description: '기록 저장을 위해 술 이름이 필요합니다.',
+        });
+        return;
+      }
+
+      const logId = crypto.randomUUID();
+      await setDoc(doc(db, 'users', user.uid, 'logs', logId), {
+        id: logId,
+        userId: user.uid,
+        drinkCategory: mapDrinkTypeToCategory(formData.drinkType),
         consumedAt: new Date().toISOString(),
-        createdAt: serverTimestamp()
+        drinkName: formData.drinkName,
+        standardDrinkId: null,
+        standardDrinkName: null,
+        brand: null,
+        abv: Number(formData.abv) || null,
+        volumeMl: null,
+        price: null,
+        calories: null,
+        foodPairing: formData.anju,
+        memo: formData.review,
+        rating: Number(formData.rating) || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+      emitToast({
+        tone: 'success',
+        title: '기록을 저장했습니다.',
+        description: '홈과 분석 화면이 즉시 갱신됩니다.',
       });
       onClose();
     } catch (err) {
       console.error(err);
+      emitToast({
+        tone: 'error',
+        title: '기록 저장에 실패했습니다.',
+        description: '네트워크 상태를 확인한 뒤 다시 시도해주세요.',
+      });
     } finally {
       setLoading(false);
     }
   };
+
+  function mapDrinkTypeToCategory(drinkType: string) {
+    const normalized = drinkType.trim().toLowerCase();
+
+    switch (normalized) {
+      case 'soju':
+      case '소주':
+        return 'soju';
+      case 'beer':
+      case '맥주':
+        return 'beer';
+      case 'wine':
+      case '와인':
+        return 'wine';
+      case 'whiskey':
+      case '위스키':
+        return 'whiskey';
+      case 'makgeolli':
+      case '막걸리':
+        return 'makgeolli';
+      default:
+        return 'other';
+    }
+  }
+
+  const canSubmit = Boolean(formData.drinkName.trim()) && !loading;
 
   if (!isOpen) return null;
 
@@ -135,7 +195,7 @@ export default function RecordModal({ isOpen, onClose }: RecordModalProps) {
                     type="text"
                     value={formData.drinkName}
                     onChange={(e) => setFormData({ ...formData, drinkName: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 focus:ring-2 focus:ring-primary/20 outline-none text-white font-bold placeholder:text-white/10"
+                    className="input-field"
                     placeholder="예: 맥캘란 12년"
                   />
                 </div>
@@ -147,7 +207,7 @@ export default function RecordModal({ isOpen, onClose }: RecordModalProps) {
                         <select
                         value={formData.drinkType}
                         onChange={(e) => setFormData({ ...formData, drinkType: e.target.value })}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 appearance-none outline-none text-white font-bold"
+                        className="select-field"
                         >
                         {["소주", "맥주", "와인", "위스키", "막걸리", "기타"].map(type => (
                             <option key={type} value={type} className="bg-[#0a0b10]">{type}</option>
@@ -162,7 +222,7 @@ export default function RecordModal({ isOpen, onClose }: RecordModalProps) {
                       type="number"
                       value={formData.abv}
                       onChange={(e) => setFormData({ ...formData, abv: parseFloat(e.target.value) })}
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 outline-none text-white font-bold"
+                      className="input-field"
                     />
                   </div>
                 </div>
@@ -173,7 +233,7 @@ export default function RecordModal({ isOpen, onClose }: RecordModalProps) {
                     type="text"
                     value={formData.anju}
                     onChange={(e) => setFormData({ ...formData, anju: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-5 outline-none text-white font-bold placeholder:text-white/10"
+                    className="input-field"
                     placeholder="예: 스테이크"
                   />
                 </div>
@@ -198,10 +258,10 @@ export default function RecordModal({ isOpen, onClose }: RecordModalProps) {
 
                 <button
                   onClick={handleSubmit}
-                  disabled={!formData.drinkName}
+                  disabled={!canSubmit}
                   className="w-full py-5 bg-primary text-black rounded-3xl font-black shadow-xl shadow-primary/20 disabled:opacity-30 disabled:grayscale transition-all uppercase tracking-widest text-sm"
                 >
-                  기록 저장
+                  {loading ? '저장 중...' : '기록 저장'}
                 </button>
               </div>
             )}

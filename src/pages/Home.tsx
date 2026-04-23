@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { TrendingDown, Wallet, Zap, Calendar } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { formatTime, formatCurrency } from '../lib/utils';
-import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 export default function Home() {
@@ -14,8 +14,7 @@ export default function Home() {
   useEffect(() => {
     if (!user) return;
     const q = query(
-      collection(db, 'logs'),
-      where('userUid', '==', user.uid),
+      collection(db, 'users', user.uid, 'logs'),
       orderBy('consumedAt', 'desc'),
       limit(1)
     );
@@ -25,7 +24,7 @@ export default function Home() {
         setLastLog(snapshot.docs[0].data());
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'logs');
+      handleFirestoreError(error, OperationType.LIST, `users/${user.uid}/logs`);
     });
 
     return unsubscribe;
@@ -92,14 +91,14 @@ export default function Home() {
             {lastLog ? (
                 <div className="card !p-4 flex items-center space-x-4 bg-white/5 border border-white/10">
                     <div className="w-14 h-14 bg-black/40 rounded-2xl flex items-center justify-center text-2xl">
-                        {lastLog.drinkType === '소주' ? '🍶' : '🍷'}
+                        {lastLog.drinkCategory === 'soju' ? '🍶' : lastLog.drinkCategory === 'beer' ? '🍺' : lastLog.drinkCategory === 'wine' ? '🍷' : '🥃'}
                     </div>
                     <div className="flex-1">
                         <p className="font-bold text-lg">{lastLog.drinkName}</p>
-                        <p className="text-xs text-white/40">안주: {lastLog.anju || '없음'}</p>
+                        <p className="text-xs text-white/40">안주: {lastLog.foodPairing || '없음'}</p>
                     </div>
                     <div className="bg-primary text-black text-[10px] font-black px-2 py-1 rounded-md uppercase">
-                        {lastLog.drinkType}
+                        {lastLog.drinkCategory}
                     </div>
                 </div>
             ) : (

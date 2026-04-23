@@ -1,51 +1,36 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
     // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    // 
-    // Collection: users
-    // Document ID: {userId}
-    // Fields: uid, displayName, email, photoURL, avgConsumptionCost, preferredDrink, lastDrinkAt, createdAt
-    //
-    // Collection: logs
-    // Document ID: {logId}
-    // Fields: userUid, drinkName, drinkType, abv, rating, anju, anjuCategory, cost, calories, review, isPublic, consumedAt
-    //
-    // Collection: posts
-    // Document ID: {postId}
-    // Fields: authorUid, authorName, authorPhoto, logId, content, likes, createdAt
-    // ===============================================================
-
     // Helper Functions
+    // ===============================================================
+    
+    // 사용자가 인증되었는지 확인
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    // 요청자가 해당 데이터의 소유자인지 확인
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // 관리자 여부 확인 (특정 이메일 또는 역할 기반)
     function isAdmin() {
       return isAuthenticated() &&
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
          (request.auth.token.email == "yant3722@gmail.com" && request.auth.token.email_verified == true));
     }
 
+    // 사용자 프로필 데이터 유효성 검사
     function isValidUser(data) {
       return data.uid == request.auth.uid &&
              data.email is string &&
              (data.displayName == null || data.displayName is string);
     }
 
-    function isValidLog(data) {
-      return data.userUid == request.auth.uid &&
-             data.drinkName is string &&
-             data.drinkName.size() > 0 && data.drinkName.size() < 100 &&
-             data.consumedAt is string;
-    }
-
+    // 음주 기록 데이터 유효성 검사
     function isValidUserLog(data) {
       return data.userId == request.auth.uid &&
              data.drinkCategory is string &&
@@ -54,6 +39,7 @@ service cloud.firestore {
              data.drinkName.size() > 0 && data.drinkName.size() < 100;
     }
 
+    // 목표 데이터 유효성 검사
     function isValidUserGoal(data) {
       return data.userId == request.auth.uid &&
              data.title is string &&
@@ -62,49 +48,39 @@ service cloud.firestore {
              data.period is string &&
              data.targetValue is number &&
              data.unit is string &&
-             data.warningThresholdPercent is number &&
              data.enabled is bool;
     }
 
-    function isValidPost(data) {
-      return data.authorUid == request.auth.uid &&
-             data.content is string && data.content.size() < 1000;
-    }
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
 
-    // Rules
+    // 사용자 프로필: 본인만 읽고 쓸 수 있음
     match /users/{userId} {
-      allow read: if isAuthenticated();
+      allow read: if isOwner(userId);
       allow create, update: if isOwner(userId) && isValidUser(request.resource.data);
       allow delete: if isAdmin();
     }
 
-    match /logs/{logId} {
-      allow read: if isAuthenticated() && (resource.data.isPublic == true || resource.data.userUid == request.auth.uid);
-      allow create: if isAuthenticated() && isValidLog(request.resource.data);
-      allow update: if isAuthenticated() && resource.data.userUid == request.auth.uid && isValidLog(request.resource.data);
-      allow delete: if isAuthenticated() && resource.data.userUid == request.auth.uid;
-    }
-
+    // 음주 기록 서브 컬렉션: 본인만 접근 가능
     match /users/{userId}/logs/{logId} {
-      allow read, delete: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUserLog(request.resource.data);
-      allow update: if isOwner(userId) && isValidUserLog(request.resource.data);
+      allow read, write: if isOwner(userId);
+      
+      // 쓰기 시 데이터 유효성 추가 검증
+      allow create, update: if isOwner(userId) && isValidUserLog(request.resource.data);
     }
 
+    // 목표 설정 서브 컬렉션: 본인만 접근 가능
     match /users/{userId}/goals/{goalId} {
-      allow read, delete: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUserGoal(request.resource.data);
-      allow update: if isOwner(userId) && isValidUserGoal(request.resource.data);
+      allow read, write: if isOwner(userId);
+
+      // 쓰기 시 데이터 유효성 추가 검증
+      allow create, update: if isOwner(userId) && isValidUserGoal(request.resource.data);
     }
 
-    match /posts/{postId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidPost(request.resource.data);
-      allow update: if isAuthenticated() && (
-        (resource.data.authorUid == request.auth.uid && isValidPost(request.resource.data)) ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']))
-      );
-      allow delete: if isAuthenticated() && (resource.data.authorUid == request.auth.uid || isAdmin());
+    // 기타 모든 경로는 기본적으로 거부
+    match /{path=**} {
+      allow read, write: if false;
     }
   }
 }

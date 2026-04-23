@@ -1,4 +1,3 @@
-export type BottomTab = 'home' | 'logs' | 'analysis' | 'goals';
+export type BottomTab = 'home' | 'logs' | 'analysis' | 'mypage';
 
-export type OverlayView = 'add-log' | 'drink-search' | 'log-detail' | 'progress' | null;
-
+export type OverlayView = 'add-log' | 'drink-search' | 'log-detail' | 'progress' | 'notification' | null;

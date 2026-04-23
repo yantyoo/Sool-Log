@@ -1,6 +1,21 @@
 import { GoogleGenAI } from "@google/genai";
+import { emitToast } from './toast';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
+function getGeminiApiKey() {
+  const viteEnv = (import.meta as any)?.env?.VITE_GEMINI_API_KEY as string | undefined;
+  const nodeEnv = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined;
+  const apiKey = viteEnv || nodeEnv;
+
+  if (!apiKey) {
+    throw new Error(
+      'GEMINI_API_KEY가 없습니다. .env.local 또는 Vite 환경변수에 키를 설정하세요.'
+    );
+  }
+
+  return apiKey;
+}
+
+const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
 export interface AlcoholInfo {
   name: string;
@@ -40,6 +55,11 @@ export async function analyzeAlcoholLabel(base64Image: string): Promise<AlcoholI
     };
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
+    emitToast({
+      tone: 'error',
+      title: '이미지 분석에 실패했습니다.',
+      description: '사진을 다시 찍거나 수동 기록을 사용해 주세요.',
+    });
     return {
       name: "Scan Failed",
       type: "Other",
@@ -61,6 +81,11 @@ export async function getPairingRecommendation(drinkName: string, drinkType: str
     return JSON.parse(response.text || "[]");
   } catch (error) {
     console.error("Gemini Pairing Error:", error);
+    emitToast({
+      tone: 'warning',
+      title: '안주 추천을 불러오지 못했습니다.',
+      description: '기본 추천 안주를 대신 보여드립니다.',
+    });
     return ["삼겹살", "치킨", "피자"]; // Fallback
   }
 }
