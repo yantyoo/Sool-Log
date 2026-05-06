@@ -64,15 +64,17 @@ service cloud.firestore {
 
     // 음주 기록 서브 컬렉션: 본인만 접근 가능
     match /users/{userId}/logs/{logId} {
-      allow read, write: if isOwner(userId);
-      
+      allow read: if isOwner(userId);
+      allow delete: if isOwner(userId);
+
       // 쓰기 시 데이터 유효성 추가 검증
       allow create, update: if isOwner(userId) && isValidUserLog(request.resource.data);
     }
 
     // 목표 설정 서브 컬렉션: 본인만 접근 가능
     match /users/{userId}/goals/{goalId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow delete: if isOwner(userId);
 
       // 쓰기 시 데이터 유효성 추가 검증
       allow create, update: if isOwner(userId) && isValidUserGoal(request.resource.data);

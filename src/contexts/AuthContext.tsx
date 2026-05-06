@@ -49,9 +49,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!userSnap.exists()) {
         const newUser = {
           uid: currentUser.uid,
-          email: currentUser.email,
-          displayName: currentUser.displayName,
-          photoURL: currentUser.photoURL,
+          email: currentUser.email ?? '',
+          displayName: currentUser.displayName ?? '',
+          photoURL: currentUser.photoURL ?? null,
           createdAt: serverTimestamp(),
           avgConsumptionCost: 30000,
           preferredDrink: 'Beer'

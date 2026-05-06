@@ -41,12 +41,17 @@ export function logToForm(log: DrinkingLog): LogFormValues {
 
 export function formToLogPayload(form: LogFormValues, userId: string, existing?: DrinkingLog): DrinkingLog {
   const selectedDrink = drinkMasterSeed.find((item) => item.id === form.standardDrinkId);
+  const consumedAt = new Date(form.consumedAt);
+
+  if (Number.isNaN(consumedAt.getTime())) {
+    throw new Error('기록 시간이 올바르지 않습니다.');
+  }
 
   return {
     id: existing?.id ?? crypto.randomUUID(),
     userId,
     drinkCategory: form.drinkCategory,
-    consumedAt: new Date(form.consumedAt).toISOString(),
+    consumedAt: consumedAt.toISOString(),
     drinkName: form.drinkName || selectedDrink?.name || '기록 없음',
     standardDrinkId: selectedDrink?.id ?? null,
     standardDrinkName: selectedDrink?.name ?? (form.standardDrinkName || null),
