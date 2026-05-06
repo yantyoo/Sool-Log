@@ -55,11 +55,20 @@ function AppWorkflow() {
   };
 
   const handleSaveLog = async () => {
-    if (!logForm.drinkName.trim() || !logForm.consumedAt.trim()) {
+    if ((!logForm.drinkName.trim() && !logForm.standardDrinkId.trim()) || !logForm.consumedAt.trim()) {
       emitToast({
         tone: 'warning',
         title: '필수 항목을 확인해주세요.',
-        description: '제품명과 기록 시간을 먼저 입력해야 합니다.',
+        description: '제품명 또는 선택한 제품과 기록 시간을 먼저 입력해야 합니다.',
+      });
+      return;
+    }
+
+    if (Number.isNaN(new Date(logForm.consumedAt).getTime())) {
+      emitToast({
+        tone: 'warning',
+        title: '기록 시간을 확인해주세요.',
+        description: '올바른 날짜와 시간을 선택해야 합니다.',
       });
       return;
     }

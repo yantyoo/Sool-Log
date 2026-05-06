@@ -30,7 +30,7 @@ export default function AddLogModal({
 }: AddLogModalProps) {
   const selectedDrink = drinkMasterSeed.find((item) => item.id === value.standardDrinkId);
   const update = (patch: Partial<LogFormValues>) => onChange({ ...value, ...patch });
-  const canSave = Boolean(value.drinkName?.trim()) && Boolean(value.consumedAt?.trim()) && !saving;
+  const canSave = (Boolean(value.drinkName?.trim()) || Boolean(value.standardDrinkId?.trim())) && Boolean(value.consumedAt?.trim()) && !saving;
 
   const labelClasses = "text-[10px] font-extrabold uppercase tracking-[0.25em] text-white/30 ml-1 flex items-center gap-1.5 mb-2.5";
 
