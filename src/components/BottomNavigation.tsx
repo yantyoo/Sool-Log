@@ -12,10 +12,10 @@ interface BottomNavigationProps {
 
 export default function BottomNavigation({ activeTab, onTabChange, onOpenAddLog }: BottomNavigationProps) {
   const tabs: Array<{ id: BottomTab; label: string; icon: React.ComponentType<{ size?: number, strokeWidth?: number }> }> = [
-    { id: 'home', label: 'HOME', icon: LayoutGrid },
-    { id: 'logs', label: 'LOGS', icon: ClipboardList },
-    { id: 'analysis', label: 'STATS', icon: Activity },
-    { id: 'mypage', label: 'ME', icon: User },
+    { id: 'home', label: '홈', icon: LayoutGrid },
+    { id: 'logs', label: '기록', icon: ClipboardList },
+    { id: 'analysis', label: '통계', icon: Activity },
+    { id: 'mypage', label: '내 정보', icon: User },
   ];
 
   return (
@@ -87,7 +87,7 @@ function TabButton({ tab, isActive, onClick }: { tab: any, isActive: boolean, on
         <Icon size={24} strokeWidth={isActive ? 2.5 : 2} className="relative z-10" />
       </div>
       <span className={cn(
-        'text-[10px] font-black tracking-[0.25em] uppercase relative z-10',
+        'text-[10px] font-black tracking-widest relative z-10',
         isActive ? 'opacity-100' : 'opacity-60'
       )}>
         {tab.label}

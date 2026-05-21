@@ -32,7 +32,12 @@ export default function AddLogModal({
   const update = (patch: Partial<LogFormValues>) => onChange({ ...value, ...patch });
   const canSave = Boolean(value.drinkName?.trim()) && Boolean(value.consumedAt?.trim()) && !saving;
 
-  const labelClasses = "text-[10px] font-extrabold uppercase tracking-[0.25em] text-white/30 ml-1 flex items-center gap-1.5 mb-2.5";
+  const abvNum = parseFloat(value.abv || '0') || 0;
+  const volNum = parseFloat(value.volumeMl || '0') || 0;
+  const pureAlcoholGrams = parseFloat((volNum * (abvNum / 100) * 0.789).toFixed(1));
+  const sojuGlasses = pureAlcoholGrams > 0 ? (pureAlcoholGrams / 6.5).toFixed(1) : '0.0';
+
+  const labelClasses = "text-[10px] font-extrabold uppercase tracking-widest text-white/30 ml-1 flex items-center gap-1.5 mb-2.5";
 
   return (
     <AnimatePresence>
@@ -157,6 +162,12 @@ export default function AddLogModal({
                       <label className={labelClasses}><GlassWater size={12} /> 용량 (ml)</label>
                       <input type="number" value={value.volumeMl} onChange={(e) => update({ volumeMl: e.target.value })} placeholder="0" className="input-field h-16 font-bold text-center" />
                     </div>
+                    {pureAlcoholGrams > 0 && (
+                      <div className="col-span-2 p-4 px-5 rounded-2xl bg-primary/10 border border-primary/20 text-xs flex justify-between items-center text-primary-light font-bold">
+                        <span>🧪 예상 순수 알코올 함량</span>
+                        <span>{pureAlcoholGrams}g (소주 약 {sojuGlasses}잔 분량)</span>
+                      </div>
+                    )}
                     <div className="space-y-3 col-span-2">
                       <label className={labelClasses}><Wallet size={12} /> 가격 (원)</label>
                       <input type="number" value={value.price} onChange={(e) => update({ price: e.target.value })} placeholder="0" className="input-field h-16 font-bold text-center" />

@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth, indexedDBLocalPersistence, initializeAuth, type Auth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { emitToast } from './toast';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -31,7 +31,11 @@ export function getFirebaseAuth() {
 }
 
 export const firebaseApp = app;
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager()
+  })
+});
 
 console.info('[firebase] initialized', {
   projectId: firebaseConfig.projectId,

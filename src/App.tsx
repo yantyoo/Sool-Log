@@ -79,13 +79,19 @@ function AppWorkflow() {
     }
   };
 
+  const handleQuickLog = (quickForm: LogFormValues) => {
+    setEditingLogId(null);
+    setLogForm(quickForm);
+    setOverlay('add-log');
+  };
+
   const renderTab = () => {
     switch (activeTab) {
-      case 'home': return <HomeScreen onOpenAddLog={() => { setEditingLogId(null); setLogForm(createEmptyLogForm()); setOverlay('add-log'); }} onOpenLogDetail={(id) => { setSelectedLogId(id); setOverlay('log-detail'); }} />;
+      case 'home': return <HomeScreen onOpenAddLog={() => { setEditingLogId(null); setLogForm(createEmptyLogForm()); setOverlay('add-log'); }} onOpenLogDetail={(id) => { setSelectedLogId(id); setOverlay('log-detail'); }} onQuickLog={handleQuickLog} />;
       case 'logs': return <LogListScreen onOpenAddLog={() => { setEditingLogId(null); setLogForm(createEmptyLogForm()); setOverlay('add-log'); }} onOpenLogDetail={(id) => { setSelectedLogId(id); setOverlay('log-detail'); }} />;
       case 'analysis': return <AnalysisScreen onOpenProgress={() => setOverlay('progress')} />;
       case 'mypage': return <MyPage />;
-      default: return <HomeScreen onOpenAddLog={() => setOverlay('add-log')} onOpenLogDetail={(id) => { setSelectedLogId(id); setOverlay('log-detail'); }} />;
+      default: return <HomeScreen onOpenAddLog={() => setOverlay('add-log')} onOpenLogDetail={(id) => { setSelectedLogId(id); setOverlay('log-detail'); }} onQuickLog={handleQuickLog} />;
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Search, ChevronRight, Star, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { doc, setDoc } from 'firebase/firestore';
@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { analyzeAlcoholLabel } from '../lib/gemini';
 import { emitToast } from '../lib/toast';
 import { cn } from '../lib/utils';
+import { getLiquorImageUrl } from '../lib/liquorImages';
 
 interface RecordModalProps {
   isOpen: boolean;
@@ -29,6 +30,17 @@ export default function RecordModal({ isOpen, onClose }: RecordModalProps) {
     review: '',
     isPublic: true
   });
+
+  const [previewImage, setPreviewImage] = useState('');
+
+  useEffect(() => {
+    if (formData.drinkName.trim()) {
+      const url = getLiquorImageUrl(formData.drinkName, formData.drinkType);
+      setPreviewImage(url);
+    } else {
+      setPreviewImage('');
+    }
+  }, [formData.drinkName, formData.drinkType]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -199,6 +211,25 @@ export default function RecordModal({ isOpen, onClose }: RecordModalProps) {
                     placeholder="예: 맥캘란 12년"
                   />
                 </div>
+
+                {previewImage && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="space-y-2"
+                  >
+                    <span className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] ml-1">주종 실제 이미지 실시간 검증</span>
+                    <div className="relative w-full h-36 rounded-2xl overflow-hidden border border-white/10 group shadow-inner">
+                      <img src={previewImage} alt="Drink Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex items-end p-4">
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-black text-white uppercase tracking-tight">{formData.drinkName}</p>
+                          <p className="text-[9px] font-extrabold text-primary-light uppercase tracking-wider">{formData.drinkType} 계열</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-3">

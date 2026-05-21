@@ -8,16 +8,23 @@ import { formToLogPayload } from '../lib/recordForms';
 import type { GoalFormValues, HabitGoal } from '../types/goal';
 import type { DrinkingLog, LogFormValues } from '../types/log';
 
+interface HealthProfile {
+  gender: 'male' | 'female';
+  weight: number;
+}
+
 interface AppDataContextValue {
   drinkMaster: typeof drinkMasterSeed;
   logs: DrinkingLog[];
   goals: HabitGoal[];
+  healthProfile: HealthProfile;
   ready: boolean;
   addLog: (form: LogFormValues) => Promise<void>;
   updateLog: (logId: string, form: LogFormValues) => Promise<void>;
   deleteLog: (logId: string) => Promise<void>;
   saveGoal: (form: GoalFormValues, goalId?: string) => Promise<void>;
   toggleGoalEnabled: (goalId: string) => Promise<void>;
+  saveHealthProfile: (profile: HealthProfile) => Promise<void>;
   getLogById: (logId: string) => DrinkingLog | undefined;
   getGoalById: (goalId: string) => HabitGoal | undefined;
 }
@@ -79,11 +86,13 @@ function makeUserCollectionPath(userId: string, collectionName: 'logs' | 'goals'
 export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [state, setState] = useState(createEmptyState);
+  const [healthProfile, setHealthProfile] = useState<HealthProfile>({ gender: 'male', weight: 70 });
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!user) {
       setState(createEmptyState());
+      setHealthProfile({ gender: 'male', weight: 70 });
       setReady(true);
       return;
     }
@@ -92,6 +101,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     const logsRef = makeUserCollectionPath(user.uid, 'logs');
     const goalsRef = makeUserCollectionPath(user.uid, 'goals');
     const logsQuery = query(logsRef, orderBy('consumedAt', 'desc'));
+    const healthDocRef = doc(db, 'users', user.uid);
 
     let readyCount = 0;
     let cancelled = false;
@@ -103,7 +113,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
     const markReady = () => {
       readyCount += 1;
-      if (!cancelled && readyCount >= 2) {
+      if (!cancelled && readyCount >= 3) {
         window.clearTimeout(readyTimeout);
         setReady(true);
       }
@@ -155,11 +165,37 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       },
     );
 
+    const unsubscribeHealth = onSnapshot(
+      healthDocRef,
+      (docSnap) => {
+        if (cancelled) return;
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          console.info('[firebase] user profile loaded for health metrics', data);
+          setHealthProfile({
+            gender: data.gender === 'female' ? 'female' : 'male',
+            weight: typeof data.weight === 'number' ? data.weight : 70
+          });
+        } else {
+          console.info('[firebase] no user doc, setting default health profile');
+          setHealthProfile({ gender: 'male', weight: 70 });
+        }
+        markReady();
+      },
+      (error) => {
+        console.error('[firebase] Failed to subscribe to health profile:', error);
+        // Fallback to default
+        if (!cancelled) setHealthProfile({ gender: 'male', weight: 70 });
+        markReady();
+      }
+    );
+
     return () => {
       cancelled = true;
       window.clearTimeout(readyTimeout);
       unsubscribeLogs();
       unsubscribeGoals();
+      unsubscribeHealth();
     };
   }, [user?.uid]);
 
@@ -289,6 +325,32 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const saveHealthProfile = async (profile: HealthProfile) => {
+    if (!user) return;
+    try {
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: user.email || '',
+        displayName: user.displayName || null,
+        gender: profile.gender,
+        weight: profile.weight,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      emitToast({
+        tone: 'success',
+        title: '신체 정보가 업데이트되었습니다.',
+        description: '개인화된 해독 속도가 홈 및 영수증 화면에 반영됩니다.',
+      });
+    } catch (error) {
+      emitToast({
+        tone: 'error',
+        title: '신체 정보 저장에 실패했습니다.',
+        description: '네트워크 상태를 확인해주세요.',
+      });
+      throw error;
+    }
+  };
+
   const getLogById = useMemo(() => {
     return (logId: string) => state.logs.find((log) => log.id === logId);
   }, [state.logs]);
@@ -303,12 +365,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         drinkMaster: drinkMasterSeed,
         logs: state.logs,
         goals: state.goals,
+        healthProfile,
         ready,
         addLog,
         updateLog,
         deleteLog,
         saveGoal,
         toggleGoalEnabled,
+        saveHealthProfile,
         getLogById,
         getGoalById,
       }}
