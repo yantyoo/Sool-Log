@@ -54,6 +54,7 @@ export default function HomeScreen({ onOpenAddLog, onOpenLogDetail, onQuickLog }
   const weeklyLogs = logs.filter((log) => new Date(log.consumedAt) >= weekAgo);
   const monthlyLogs = logs.filter((log) => new Date(log.consumedAt) >= monthAgo);
   const monthlySpend = monthlyLogs.reduce((sum, log) => sum + (log.price ?? 0), 0);
+  const monthlyCalories = monthlyLogs.reduce((sum, log) => sum + (log.calories ?? 0), 0);
 
   // Sober Milestone calculation
   const getMilestoneInfo = (seconds: number) => {
@@ -247,17 +248,35 @@ export default function HomeScreen({ onOpenAddLog, onOpenLogDetail, onQuickLog }
       )}
 
       {/* Stats Cards Row */}
-      <div className="grid grid-cols-1 gap-5">
-        <motion.div variants={itemVariants} className="card p-6 flex items-center justify-between group relative overflow-hidden">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-              <Wallet size={22} className="text-primary-light" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-5">
+        <motion.div variants={itemVariants} className="card !p-4 sm:!p-6 flex items-center justify-between group relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shrink-0">
+              <Wallet size={18} className="text-primary-light sm:hidden" />
+              <Wallet size={22} className="text-primary-light hidden sm:block" />
             </div>
-            <div className="space-y-0.5">
-              <p className="text-[10px] font-extrabold uppercase tracking-widest text-white/30">월간 누적 지출액</p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black">{formatCurrency(monthlySpend).replace('₩', '')}</span>
-                <span className="text-[10px] font-bold text-white/20 uppercase">KRW</span>
+            <div className="space-y-0.5 min-w-0">
+              <p className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-white/30 truncate">월간 누적 지출액</p>
+              <div className="flex items-baseline gap-1 flex-wrap">
+                <span className="text-lg sm:text-2xl font-black tracking-tight">{formatCurrency(monthlySpend).replace('₩', '')}</span>
+                <span className="text-[9px] sm:text-[10px] font-bold text-white/20 uppercase">KRW</span>
+              </div>
+            </div>
+          </div>
+          <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors" />
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="card !p-4 sm:!p-6 flex items-center justify-between group relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 w-full">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500 shrink-0">
+              <Flame size={18} className="text-primary-light sm:hidden" />
+              <Flame size={22} className="text-primary-light hidden sm:block" />
+            </div>
+            <div className="space-y-0.5 min-w-0">
+              <p className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-white/30 truncate">월간 섭취 칼로리</p>
+              <div className="flex items-baseline gap-1 flex-wrap">
+                <span className="text-lg sm:text-2xl font-black tracking-tight">{monthlyCalories}</span>
+                <span className="text-[9px] sm:text-[10px] font-bold text-white/20 uppercase">KCAL</span>
               </div>
             </div>
           </div>

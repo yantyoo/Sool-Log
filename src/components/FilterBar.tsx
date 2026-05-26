@@ -29,9 +29,9 @@ interface FilterBarProps {
 
 export default function FilterBar({ value, onChange }: FilterBarProps) {
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex items-center gap-6 w-full">
       {/* Categories (Horizontal Scroll) */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar scroll-smooth">
+      <div className="flex-1 min-w-0 flex gap-2 overflow-x-auto no-scrollbar scroll-smooth">
         {categories.map((item) => (
           <button
             key={item.value}

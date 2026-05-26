@@ -153,6 +153,7 @@ export default function LogListScreen({ onOpenAddLog, onOpenLogDetail }: LogList
                     setSelectedDate(null);
                   } else {
                     setSelectedDate(day);
+                    setFilters(prev => ({ ...prev, period: 'all' }));
                   }
                 }}
                 className={cn(
@@ -210,11 +211,21 @@ export default function LogListScreen({ onOpenAddLog, onOpenLogDetail }: LogList
             />
          </div>
          
-         <div className="flex items-center gap-3 overflow-x-auto pb-2 px-1 no-scrollbar">
+         <div className="flex items-center gap-3 w-full px-1">
             <div className="flex-none p-3.5 rounded-2xl bg-white/5 border border-white/10 text-white/40">
                <SlidersHorizontal size={16} />
             </div>
-            <FilterBar value={filters} onChange={setFilters} />
+            <div className="flex-1 min-w-0">
+               <FilterBar 
+                 value={filters} 
+                 onChange={(newFilters) => {
+                   if (newFilters.period !== filters.period && newFilters.period !== 'all') {
+                     setSelectedDate(null);
+                   }
+                   setFilters(newFilters);
+                 }} 
+               />
+            </div>
          </div>
       </motion.div>
 

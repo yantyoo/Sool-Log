@@ -22,6 +22,7 @@ interface AuthContextType {
   loggingIn: boolean;
   login: (providerName: 'google' | 'apple' | 'kakao') => Promise<void>;
   logout: () => Promise<void>;
+  acceptTerms: () => Promise<void>;
   dbUser: any | null;
   authError: string | null;
 }
@@ -56,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           displayName: currentUser.displayName,
           photoURL: currentUser.photoURL,
           createdAt: serverTimestamp(),
+          termsAcceptedAt: null,
           avgConsumptionCost: 30000,
           preferredDrink: 'Beer'
         };
@@ -259,6 +261,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+   const acceptTerms = async () => {
+    if (!user) return;
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, { termsAcceptedAt: serverTimestamp() }, { merge: true });
+      setDbUser((prev: any) => ({ ...prev, termsAcceptedAt: new Date().toISOString() }));
+    } catch (error) {
+      console.error('Failed to accept terms', error);
+      throw error;
+    }
+  };
+
   const logout = async () => {
     const auth = getFirebaseAuth();
     const platform = Capacitor.getPlatform();
@@ -269,7 +283,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loggingIn, login, logout, dbUser, authError }}>
+    <AuthContext.Provider value={{ user, loading, loggingIn, login, logout, acceptTerms, dbUser, authError }}>
       {children}
     </AuthContext.Provider>
   );

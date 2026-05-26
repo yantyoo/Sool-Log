@@ -1,11 +1,13 @@
-import React from 'react';
-import { X, Search, ChevronRight, Sparkles, Calendar, GlassWater, Percent, Wallet, Flame, PenLine } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Search, ChevronRight, Sparkles, Calendar, GlassWater, Percent, Wallet, Flame, PenLine, Camera, Loader2 } from 'lucide-react';
 import { drinkMasterSeed } from '../../data/drinkMasterSeed';
 import { getDrinkCategoryLabel } from '../../lib/recordForms';
 import DrinkListItem from '../../components/DrinkListItem';
 import type { LogFormValues } from '../../types/log';
 import { cn } from '../../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import { analyzeAlcoholLabel } from '../../lib/gemini';
+import { getLiquorImageUrl } from '../../lib/liquorImages';
 
 interface AddLogModalProps {
   open: boolean;
@@ -16,6 +18,18 @@ interface AddLogModalProps {
   onOpenDrinkSearch: () => void;
   editing: boolean;
   saving?: boolean;
+}
+
+function mapDrinkTypeToCategory(drinkType: string): any {
+  const normalized = drinkType.trim().toLowerCase();
+  if (normalized.includes('soju') || normalized.includes('소주')) return 'soju';
+  if (normalized.includes('beer') || normalized.includes('맥주')) return 'beer';
+  if (normalized.includes('wine') || normalized.includes('와인')) return 'wine';
+  if (normalized.includes('whiskey') || normalized.includes('위스키') || normalized.includes('whisky')) return 'whiskey';
+  if (normalized.includes('makgeolli') || normalized.includes('막걸리')) return 'makgeolli';
+  if (normalized.includes('highball') || normalized.includes('하이볼')) return 'highball';
+  if (normalized.includes('traditional') || normalized.includes('전통주')) return 'traditional_liquor';
+  return 'other';
 }
 
 export default function AddLogModal({
@@ -31,6 +45,36 @@ export default function AddLogModal({
   const selectedDrink = drinkMasterSeed.find((item) => item.id === value.standardDrinkId);
   const update = (patch: Partial<LogFormValues>) => onChange({ ...value, ...patch });
   const canSave = Boolean(value.drinkName?.trim()) && Boolean(value.consumedAt?.trim()) && !saving;
+  
+  const [scanning, setScanning] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setScanning(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        const base64 = (reader.result as string).split(',')[1];
+        const aiResult = await analyzeAlcoholLabel(base64);
+        
+        onChange({
+          ...value,
+          drinkName: aiResult.name,
+          drinkCategory: mapDrinkTypeToCategory(aiResult.type || ''),
+          abv: aiResult.abv ? aiResult.abv.toString() : '',
+          memo: aiResult.description || value.memo
+        });
+      } catch (err) {
+        console.error("AI Scan error:", err);
+      } finally {
+        setScanning(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const abvNum = parseFloat(value.abv || '0') || 0;
   const volNum = parseFloat(value.volumeMl || '0') || 0;
@@ -77,21 +121,76 @@ export default function AddLogModal({
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto px-8 py-8 space-y-10 pb-40 scroll-smooth">
               
-              {/* Premium Search Trigger */}
+              {/* Premium Search & Scan Triggers */}
               <div className="space-y-4">
-                <button 
-                  onClick={onOpenDrinkSearch} 
-                  className="w-full h-20 rounded-[28px] bg-white/[0.03] border border-white/[0.08] flex items-center gap-5 px-7 text-white/40 hover:bg-white/[0.06] hover:border-primary-light/40 transition-all group active:scale-[0.98]"
-                >
-                  <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Search size={20} className="text-primary-light" />
-                  </div>
-                  <div className="text-left">
-                    <span className="block font-extrabold text-[15px] text-white/80">데이터베이스에서 찾기</span>
-                    <span className="block text-xs font-medium text-white/30">브랜드와 정확한 도수를 불러올 수 있어요</span>
-                  </div>
-                </button>
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    type="button"
+                    onClick={onOpenDrinkSearch} 
+                    className="h-24 rounded-[28px] bg-white/[0.03] border border-white/[0.08] flex flex-col items-center justify-center gap-2 text-white/40 hover:bg-white/[0.06] hover:border-primary-light/40 transition-all group active:scale-[0.98]"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Search size={18} className="text-primary-light" />
+                    </div>
+                    <div className="text-center">
+                      <span className="block font-extrabold text-xs text-white/85">DB 검색</span>
+                      <span className="block text-[9px] text-white/30">브랜드 자동조회</span>
+                    </div>
+                  </button>
+
+                  <button 
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()} 
+                    className="h-24 rounded-[28px] bg-white/[0.03] border border-white/[0.08] flex flex-col items-center justify-center gap-2 text-white/40 hover:bg-white/[0.06] hover:border-primary-light/40 transition-all group active:scale-[0.98]"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Camera size={18} className="text-primary-light" />
+                    </div>
+                    <div className="text-center">
+                      <span className="block font-extrabold text-xs text-white/85">AI 라벨 스캔</span>
+                      <span className="block text-[9px] text-white/30">제미나이 자동입력</span>
+                    </div>
+                  </button>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*" 
+                    onChange={handleFileUpload} 
+                  />
+                </div>
               </div>
+
+              {scanning && (
+                <div className="p-6 rounded-[28px] bg-primary/5 border border-primary/20 flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="animate-spin text-primary-light" size={24} />
+                  <span className="text-xs text-white/50 font-bold">AI가 라벨 사진을 분석하는 중입니다...</span>
+                </div>
+              )}
+
+              {/* Dynamic Image Preview */}
+              {value.drinkName.trim() && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="space-y-2"
+                >
+                  <p className={labelClasses}><Sparkles size={12} className="text-primary-light" /> 실시간 음료 프리뷰</p>
+                  <div className="relative w-full h-36 rounded-[24px] overflow-hidden border border-white/10 group shadow-2xl">
+                    <img 
+                      src={getLiquorImageUrl(value.drinkName, value.drinkCategory)} 
+                      alt="Drink Preview" 
+                      className="w-full h-full object-cover" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent flex items-end p-5">
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-black text-white uppercase tracking-tight">{value.drinkName}</p>
+                        <p className="text-[9px] font-extrabold text-primary-light uppercase tracking-wider">{getDrinkCategoryLabel(value.drinkCategory)} 계열</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
               {selectedDrink && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">

@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { getLiquorImageUrl } from '../lib/liquorImages';
 
 export default function Feed() {
   const { user, dbUser } = useAuth();
@@ -53,21 +54,12 @@ export default function Feed() {
           </div>
 
           <div className="aspect-[4/3] bg-black/40 relative group overflow-hidden">
-            <div
-              className={cn(
-                'w-full h-full opacity-20',
-                log.drinkCategory === 'soju'
-                  ? 'bg-green-500'
-                  : log.drinkCategory === 'wine'
-                    ? 'bg-red-500'
-                    : log.drinkCategory === 'beer'
-                      ? 'bg-yellow-500'
-                      : 'bg-blue-500',
-              )}
+            <img 
+              src={getLiquorImageUrl(log.drinkName, log.drinkCategory)} 
+              alt={log.drinkName} 
+              className="w-full h-full object-cover absolute inset-0 transition-transform duration-500 group-hover:scale-105"
             />
-            <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-40">
-              {log.drinkCategory === 'soju' ? '🍶' : log.drinkCategory === 'beer' ? '🍺' : log.drinkCategory === 'wine' ? '🍷' : '🥃'}
-            </div>
+            <div className="absolute inset-0 bg-black/35" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
               <div className="flex items-center space-x-2 mb-2">
                 <span className="bg-primary text-black px-2 py-0.5 rounded-md text-[9px] font-black uppercase">{log.drinkCategory}</span>

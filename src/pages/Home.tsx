@@ -6,6 +6,8 @@ import { formatTime, formatCurrency } from '../lib/utils';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 
+import { getLiquorImageUrl } from '../lib/liquorImages';
+
 export default function Home() {
   const { user, dbUser } = useAuth();
   const [lastLog, setLastLog] = useState<any>(null);
@@ -89,11 +91,15 @@ export default function Home() {
         
         <div className="grid grid-cols-1 gap-4">
             {lastLog ? (
-                <div className="card !p-4 flex items-center space-x-4 bg-white/5 border border-white/10">
-                    <div className="w-14 h-14 bg-black/40 rounded-2xl flex items-center justify-center text-2xl">
-                        {lastLog.drinkCategory === 'soju' ? '🍶' : lastLog.drinkCategory === 'beer' ? '🍺' : lastLog.drinkCategory === 'wine' ? '🍷' : '🥃'}
-                    </div>
-                    <div className="flex-1">
+                 <div className="card !p-4 flex items-center space-x-4 bg-white/5 border border-white/10">
+                     <div className="w-14 h-14 bg-black/40 rounded-2xl flex items-center justify-center overflow-hidden border border-white/5">
+                         <img 
+                           src={getLiquorImageUrl(lastLog.drinkName, lastLog.drinkCategory)} 
+                           alt={lastLog.drinkName} 
+                           className="w-full h-full object-cover" 
+                         />
+                     </div>
+                     <div className="flex-1">
                         <p className="font-bold text-lg">{lastLog.drinkName}</p>
                         <p className="text-xs text-white/40">안주: {lastLog.foodPairing || '없음'}</p>
                     </div>
